@@ -35,7 +35,7 @@ static int32_t query(int fd, const char *text){
 	}
 
 	// 4 byte header
-	char rbuf[4 +k_max_msg + 1];
+	char rbuf[4 + k_max_msg + 1];
 	errno = 0;
 
 	err = read_full(fd, rbuf, 4);
@@ -89,20 +89,19 @@ int main(){
 	// multiple requests
 	int32_t err = query(fd, "hello1");
 	if(err){
-		goto L_DONE;
+		return err;
 	}
 	
 	err = query(fd, "hello2");	
 	if(err){
-		goto L_DONE;
+		return err;
 	}
 
 	err = query(fd, "hello3");	
 	if(err){
-		goto L_DONE;
+		return err;
 	}
 
-	L_DONE:
 	close(fd);
 	return 0;
 }
