@@ -13,7 +13,7 @@ void die(const char *msg) {
   abort();
 }
 
-static int32_t query(int fd, const char *text) {
+static int32_t send_req(int fd, const char *text) {
   uint32_t len = (uint32_t)strlen(text);
   if (len > MAX_BUFFER_SIZE) {
     return -1;
@@ -27,21 +27,14 @@ static int32_t query(int fd, const char *text) {
   memcpy(wbuf, &len, HEADER_SIZE);
   memcpy(&wbuf[HEADER_SIZE], text, len);
 
-  int32_t res = write_all(fd, wbuf, HEADER_SIZE + len);
+  return write_all(fd, wbuf, HEADER_SIZE + len);
+}
 
-  if (res < 0) {
-    if (errno == 0) {
-      msg("EOF after write_all()");
-    } else {
-      msg_err("write_all() error", errno);
-    }
-    return res;
-  }
-
+static int32_t read_res(int fd) {
+  // 4 byte header
   char rbuf[MESSAGE_SIZE + 1];
   errno = 0;
-
-  res = read_full(fd, rbuf, HEADER_SIZE);
+  int32_t res = read_full(fd, rbuf, HEADER_SIZE);
 
   if (res < 0) {
     if (errno == 0) {
@@ -52,11 +45,11 @@ static int32_t query(int fd, const char *text) {
     return res;
   }
 
-  // reply body
+  // parse length
+  uint32_t len = 0;
   len = parse_length(rbuf);
 
-  printf("reply len: %d\n", len);
-
+  // reply body
   res = read_full(fd, &rbuf[HEADER_SIZE], len);
 
   if (res < 0) {
@@ -90,19 +83,23 @@ int main() {
     die("connect to server");
   }
 
-  // multiple requests
-  int32_t err = query(fd, "hello 1");
-  if (err) {
-    close(fd);
-    return err;
+  // multiple pipelined requests
+  const char *query_list[3] = {"hello1", "hello2", "hello3"};
+  for (size_t i = 0; i < 3; i++) {
+    int32_t err = send_req(fd, query_list[i]);
+    if (err) {
+      goto L_DONE;
+    }
   }
 
-  err = query(fd, "hello 12");
-  if (err) {
-    close(fd);
-    return err;
+  for (size_t i = 0; i < 3; ++i) {
+    int32_t err = read_res(fd);
+    if (err) {
+      goto L_DONE;
+    }
   }
 
+L_DONE:
   close(fd);
   return 0;
 }

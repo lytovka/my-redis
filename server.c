@@ -15,6 +15,7 @@ void die(const char *msg) {
 }
 
 static int32_t one_request(int connfd) {
+  printf("processing one_request\n");
   char rbuf[MESSAGE_SIZE + 1];
   errno = 0;
 
@@ -28,6 +29,7 @@ static int32_t one_request(int connfd) {
 
   uint32_t len = parse_length(rbuf);
   if (len > MAX_BUFFER_SIZE) {
+    msg("message too long");
     return -1;
   }
 
@@ -48,6 +50,7 @@ static int32_t one_request(int connfd) {
   len = (uint32_t)strlen(reply);
   memcpy(wbuf, &len, HEADER_SIZE);
   memcpy(&wbuf[HEADER_SIZE], reply, len);
+
   return write_all(connfd, wbuf, HEADER_SIZE + len);
 }
 
@@ -80,13 +83,17 @@ int main() {
   }
 
   while (1) {
+    printf("outer loop\n");
     struct sockaddr_in client_addr = {};
     socklen_t socklen = sizeof(client_addr);
+    printf("before accept\n");
     int connfd = accept(fd, (struct sockaddr *)&client_addr, &socklen);
+    printf("after accept\n");
     if (connfd < 0) {
       continue;
     }
     while (1) {
+      printf("inner loop\n");
       int32_t err = one_request(connfd);
       if (err) {
         break;
