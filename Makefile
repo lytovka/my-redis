@@ -1,8 +1,8 @@
-CC=gcc
-SOURCES=utils.c
+CC=g++
+SOURCES=utils.cpp
 OBJDIR=obj
 DISTDIR=dist
-OBJECTS=$(SOURCES:%.c=$(OBJDIR)/%.o)
+OBJECTS=$(SOURCES:%.cpp=$(OBJDIR)/%.o)
 EXECUTABLE1=server
 EXECUTABLE2=client
 
@@ -12,13 +12,13 @@ $(DISTDIR) $(OBJDIR):
 	mkdir -p $@
 
 $(EXECUTABLE1): $(OBJECTS) $(OBJDIR)/server.o
-	$(CC) $^ -o $(DISTDIR)/$@
+	$(CC) $^ -std=c++17 -o $(DISTDIR)/$@
 
 $(EXECUTABLE2): $(OBJECTS) $(OBJDIR)/client.o
-	$(CC) $^ -o $(DISTDIR)/$@
+	$(CC) $^ -std=c++17 -o $(DISTDIR)/$@
 
-$(OBJDIR)/%.o: %.c
-	$(CC) -c $< -o $@
+$(OBJDIR)/%.o: %.cpp
+	$(CC) -c $< -std=c++17 -o $@
 
 clean:
 	rm -f $(OBJDIR)/*.o 
